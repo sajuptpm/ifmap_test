@@ -54,12 +54,24 @@ def sub_root(ssrc_mapc):
     #subscribe_root
     result = ssrc_mapc.call('subscribe', subreq)
 
+def init_conn(args):
+	#SM:new
+    mapclient = ifmap_server_connect(args)
+    connected = False
+    while not connected:
+        try:
+            result = mapclient.call('newSession', NewSessionRequest())
+            connected = True
+        except socket.error as e:
+            time.sleep(3)
+    print "ifmap conn established====="
+    mapclient.set_session_id(newSessionResult(result).get_session_id())
+    mapclient.set_publisher_id(newSessionResult(result).get_publisher_id())
+    return mapclient
+
 def init_sub(args):
 	#First conn to ifmap server
-    ssrc_mapc = ifmap_server_connect(args)
-    result = ssrc_mapc.call('newSession', NewSessionRequest())
-    ssrc_mapc.set_session_id(newSessionResult(result).get_session_id())
-    ssrc_mapc.set_publisher_id(newSessionResult(result).get_publisher_id())
+    ssrc_mapc = init_conn(args)
     sub_root(ssrc_mapc)
     #ssrc_initialize
     return ssrc_mapc
@@ -76,6 +88,7 @@ def init_arc(args, ssrc_mapc):
     #get session id from first conn and set it here
     arc_mapc.set_session_id(ssrc_mapc.get_session_id())
     arc_mapc.set_publisher_id(ssrc_mapc.get_publisher_id())
+    #arc_initialize
     return arc_mapc
 
 def start_pl(sub, ssrc_mapc):
@@ -84,6 +97,7 @@ def start_pl(sub, ssrc_mapc):
         try:
             pollreq = PollRequest(arc_mapc.get_session_id())
             result = arc_mapc.call('poll', pollreq)
+            #launch_arc
             sub.process(result)
         except Exception as e:
         	raise ex
@@ -92,6 +106,7 @@ def launch_ssrc(args, sub):
     while True:
         ssrc_mapc = init_sub(args)
         arc_glet = gevent.spawn(start_pl, sub, ssrc_mapc)
+        #launch_ssrc
         arc_glet.join()
 
 ##############################
@@ -147,8 +162,15 @@ def parse_pl_res(poll_result_str):
                         idents[ident2_type] = get_fq_name_str_from_ifmap_id(
                             ident2_imid)
                 result_list.append((result_type, idents, meta))
+    			#parse_poll_result            
     return result_list
-# end parse_poll_result
+
+
+
+
+
+
+
 
 
 

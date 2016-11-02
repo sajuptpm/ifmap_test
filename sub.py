@@ -23,6 +23,7 @@ class Sub(object):
                     funcname = "delete_" + meta_name.replace('-', '_')
                 elif result_type in ['searchResult', 'updateResult']:
                     funcname = "add_" + meta_name.replace('-', '_')
+                    #process_poll_result
                 # end if result_type
                 #try:
                 #    func = getattr(self, funcname)
